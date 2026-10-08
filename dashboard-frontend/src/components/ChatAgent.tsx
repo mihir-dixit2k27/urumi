@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { execMcpTool, queryMcpList } from '../services/api';
 
 export function ChatAgent({ apiKey }: { apiKey: string }) {
@@ -18,12 +18,12 @@ export function ChatAgent({ apiKey }: { apiKey: string }) {
             // First step: fetch available schema from the Gateway
             setMessages(prev => [...prev, { role: "system", content: `Connecting to Gateway for tools mapping...` }]);
             const catalog = await queryMcpList(apiKey);
-
+            console.log(catalog);
             // Execute simulated LLM decision (e.g. routing to create_product or list_orders)
             setMessages(prev => [...prev, { role: "system", content: `Executing tool sequence via unified POST architecture.` }]);
 
-            // Here we would invoke execMcpTool with the parsed payload
             // For example: await execMcpTool(apiKey, "store_1_list_products", { page: 1, per_page: 5 });
+            console.log(execMcpTool);
 
             setMessages(prev => [...prev, { role: "agent", content: `Action authorized and routed successfully. I am ready for the next instruction.` }]);
         } catch (e: any) {

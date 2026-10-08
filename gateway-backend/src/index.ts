@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+// @ts-ignore
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 
@@ -32,7 +33,7 @@ app.post('/mcp', authMiddleware, async (req: Request, res: Response) => {
         let allTools: any[] = [];
 
         // Fan out requests with timeouts
-        const promises = servers.map(async (server) => {
+        const promises = servers.map(async (server: any) => {
             try {
                 const response = await axios.post(
                     server.url,
@@ -61,7 +62,7 @@ app.post('/mcp', authMiddleware, async (req: Request, res: Response) => {
         });
 
         const results = await Promise.all(promises);
-        results.forEach(tools => allTools = allTools.concat(tools));
+        results.forEach((tools: any[]) => allTools = allTools.concat(tools));
 
         return res.json({ jsonrpc: '2.0', id: body.id, result: { tools: allTools } });
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchLogs } from '../services/api';
 
 export function AdminPanel() {
@@ -8,7 +8,7 @@ export function AdminPanel() {
         let mounted = true;
         fetchLogs().then(data => {
             if (mounted) setLogs(Array.isArray(data) ? data : []);
-        }).catch(e => console.error("Failed fetching logs for admin panel"));
+        }).catch(() => console.error("Failed fetching logs for admin panel"));
         return () => { mounted = false; };
     }, []);
 

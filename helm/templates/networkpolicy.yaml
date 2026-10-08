@@ -1,0 +1,120 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-gateway-and-dashboard
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["gateway", "dashboard"]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx # Common label for ingress-nginx namespace, adjust based on env (e.g. traefik)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-mcpserver-and-external
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mcp-server
+  - to:
+    # Allow external egress for LLM provider APIs (typically via Internet/0.0.0.0/0, assuming DNS is allowed)
+    - ipBlock:
+        cidr: 0.0.0.0/0
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mcpserver-to-wordpress
+spec:
+  podSelector:
+    matchLabels:
+      app: mcp-server
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: wordpress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-wordpress-to-mariadb
+spec:
+  podSelector:
+    matchLabels:
+      app: wordpress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mariadb
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mariadb-ingress-from-wordpress
+spec:
+  podSelector:
+    matchLabels:
+      app: mariadb
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: wordpress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-wordpress-ingress-from-external
+spec:
+  podSelector:
+    matchLabels:
+      app: wordpress
+  ingress:
+  - from:
+    - namespaceSelector: # Ingress controller
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  - from:
+    - podSelector: # MCP Server
+        matchLabels:
+          app: mcp-server
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+spec:
+  podSelector: {}
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

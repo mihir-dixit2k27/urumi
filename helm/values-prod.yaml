@@ -1,0 +1,19 @@
+# Production environment values (k3s on VPS)
+environment: prod
+
+storage:
+  className: local-path # local-path provisioner for k3s
+
+ingress:
+  enabled: true
+  className: traefik # common for k3s
+  host: store.yourdomain.com
+  tls: true # Triggers cert-manager annotations
+
+mariadb:
+  rootPassword: "ReplaceWithSecurePasswordProd"
+  dbPassword: "ReplaceWithSecurePasswordProd"
+
+wordpress:
+  password: "ReplaceWithSecurePasswordProd"
+  host: "store.yourdomain.com"

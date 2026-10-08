@@ -1,0 +1,19 @@
+# Local environment values (Kind/k3d/Minikube)
+environment: local
+
+storage:
+  className: standard # Standard provisioner for local clusters
+
+ingress:
+  enabled: true
+  className: nginx
+  host: woocommerce.local
+  tls: false
+
+mariadb:
+  rootPassword: "ReplaceWithSecurePasswordLocal"
+  dbPassword: "ReplaceWithSecurePasswordLocal"
+
+wordpress:
+  password: "ReplaceWithSecurePasswordLocal"
+  host: "woocommerce.local"

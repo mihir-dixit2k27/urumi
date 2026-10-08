@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  labels:
+    app: mariadb
+spec:
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      containers:
+      - name: mariadb
+        image: bitnami/mariadb:latest
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: woocommerce-credentials
+              key: mariadb-root-password
+        - name: MARIADB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: woocommerce-credentials
+              key: mariadb-password
+        - name: MARIADB_DATABASE
+          value: bitnami_wordpress
+        - name: MARIADB_USER
+          value: bn_wordpress
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mariadb-data
+          mountPath: /bitnami/mariadb
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      volumes:
+      - name: mariadb-data
+        persistentVolumeClaim:
+          claimName: mariadb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-service
+spec:
+  selector:
+    app: mariadb
+  ports:
+  - port: 3306
+    targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: bitnami/wordpress:latest
+        env:
+        - name: WORDPRESS_DATABASE_HOST
+          value: mariadb-service
+        - name: WORDPRESS_DATABASE_USER
+          value: bn_wordpress
+        - name: WORDPRESS_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: woocommerce-credentials
+              key: mariadb-password
+        - name: WORDPRESS_DATABASE_NAME
+          value: bitnami_wordpress
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        volumeMounts:
+        - name: wordpress-data
+          mountPath: /bitnami/wordpress
+        livenessProbe:
+          httpGet:
+            path: /wp-login.php
+            port: http
+          initialDelaySeconds: 120
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /wp-login.php
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 250m
+            memory: 512Mi
+      volumes:
+      - name: wordpress-data
+        persistentVolumeClaim:
+          claimName: wordpress-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+spec:
+  selector:
+    app: wordpress
+  ports:
+  - port: 80
+    targetPort: http
+  - port: 443
+    targetPort: https

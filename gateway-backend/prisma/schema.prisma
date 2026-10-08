@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  apiKey    String   @unique // hashed or raw API key
+  role      String   @default("member") // admin, member
+  logs      AuditLog[]
+}
+
+model UpstreamServer {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // Target namespace prefix, e.g., 'store_1'
+  url       String   // Internal Cluster URL, e.g., 'http://mcp-server:3000/mcp'
+  token     String?  // Encrypted Bearer Token for upstream
+  logs      AuditLog[]
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  serverId  Int
+  server    UpstreamServer @relation(fields: [serverId], references: [id])
+  tool      String
+  timestamp DateTime @default(now())
+  durationMs Int
+  outcome   String   // 'success', 'protocol_error', 'tool_error'
+}
